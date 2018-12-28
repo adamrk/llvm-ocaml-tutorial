@@ -1,0 +1,4 @@
+(rule
+ (targets libbindings.so)
+ (deps bindings.c)
+ (action (run gcc -shared -fPIC %{deps} -o %{targets})))
