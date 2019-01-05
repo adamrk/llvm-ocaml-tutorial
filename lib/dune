@@ -12,3 +12,8 @@
    llvm.scalar_opts)
  (preprocess (pps ppx_jane ppx_expect ppx_let))
  (inline_tests))
+
+(rule
+ (targets ocamllexer.ml)
+  (deps ocamllexer.mll)
+  (action (run %{bin:ocamllex} -q -o %{targets} %{deps})))
