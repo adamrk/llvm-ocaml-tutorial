@@ -17,3 +17,8 @@
  (targets ocamllexer.ml)
   (deps ocamllexer.mll)
   (action (run %{bin:ocamllex} -q -o %{targets} %{deps})))
+
+(rule 
+ (targets menhir_parser.mli menhir_parser.ml)
+  (deps menhir_parser.mly)
+  (action (ignore-stderr (run menhir --external-tokens Ast --explain %{deps}))))

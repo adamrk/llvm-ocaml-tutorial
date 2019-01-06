@@ -1,6 +1,6 @@
 {
   open Lexing
-  open Menhir_lexer
+  open Ast
 
   exception SyntaxError of string
 
@@ -27,6 +27,10 @@
     | "def"    { DEF }
     | "extern" { EXTERN }
     | float    { NUMBER (float_of_string (Lexing.lexeme lexbuf)) }
+    | "("      { LEFT_PAREN }
+    | ")"      { RIGHT_PAREN }
+    | ","      { COMMA }
+    | ";"      { SEMICOLON }
     | _        { KWD (Lexing.lexeme_char lexbuf 0) }
     | eof      { EOF }
 
