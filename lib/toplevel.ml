@@ -2,9 +2,7 @@ open Core
 
 let parse_and_print lexbuf =
   let expr = Menhir_parser.single_expr Ocamllexer.read lexbuf in 
-  printf !"first time: %{sexp: Ast.expr}\n" expr;
-  let expr = Menhir_parser.single_expr Ocamllexer.read lexbuf in 
-  printf !"second time: %{sexp: Ast.expr}\n" expr
+  printf !"%{sexp: Ast.Expr.t}\n" (Ast.Expr.of_no_binop expr)
 
 let rec get_full_expr accum =
   Out_channel.(flush stdout);
@@ -13,7 +11,15 @@ let rec get_full_expr accum =
   | true -> List.rev (new_line :: accum) |> String.concat ~sep:"\n"
   | false -> get_full_expr (new_line :: accum)
 
-let rec run_main () =
+let run_main () =
+  let rec loop () =
   let input = get_full_expr [] in
+  printf !"got input %s\n" input;
   parse_and_print (Lexing.from_string input);
-  run_main ()
+  loop ()
+  in
+  Hashtbl.add_exn Ast.binop_precedence ~key:'<' ~data:10;
+  Hashtbl.add_exn Ast.binop_precedence ~key:'+' ~data:20;
+  Hashtbl.add_exn Ast.binop_precedence ~key:'-' ~data:20;
+  Hashtbl.add_exn Ast.binop_precedence ~key:'*' ~data:40;
+  loop ()

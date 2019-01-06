@@ -1,4 +1,5 @@
 {
+  open Core
   open Lexing
   open Ast
 
@@ -10,6 +11,10 @@
       { pos with pos_bol = lexbuf.lex_curr_pos;
                  pos_lnum = pos.pos_lnum + 1
       }
+
+  let echo token =
+    printf !"token: %{sexp: token}\n" token;
+    token
 }
 
   let white   = [' ' '\t']+
@@ -23,16 +28,16 @@
     parse 
     | white    { read lexbuf }
     | newline  { next_line lexbuf; read lexbuf }
-    | id       { IDENT (Lexing.lexeme lexbuf) }
-    | "def"    { DEF }
-    | "extern" { EXTERN }
-    | float    { NUMBER (float_of_string (Lexing.lexeme lexbuf)) }
-    | "("      { LEFT_PAREN }
-    | ")"      { RIGHT_PAREN }
-    | ","      { COMMA }
-    | ";"      { SEMICOLON }
-    | _        { KWD (Lexing.lexeme_char lexbuf 0) }
-    | eof      { EOF }
+    | id       { IDENT (Lexing.lexeme lexbuf) |> echo}
+    | "def"    { DEF |> echo}
+    | "extern" { EXTERN |> echo}
+    | float    { NUMBER (float_of_string (Lexing.lexeme lexbuf)) |> echo}
+    | "("      { LEFT_PAREN |> echo}
+    | ")"      { RIGHT_PAREN |> echo}
+    | ","      { COMMA |> echo}
+    | ";"      { SEMICOLON |> echo}
+    | _        { KWD (Lexing.lexeme_char lexbuf 0) |> echo}
+    | eof      { EOF |> echo}
 
   and read_comment =
     parse

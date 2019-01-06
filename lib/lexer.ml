@@ -417,7 +417,7 @@ let%expect_test "binops" =
   [%expect
     {| (Ok (Binary + (Variable x) (Binary * (Variable y) (Number 5)))) |}] ;
   print_exp "!x * z" ;
-  [%expect {| (Ok (Binary * (Unary ! (Variable x)) (Variable y))) |}] ;
+  [%expect {| (Ok (Unary ! (Binary * (Variable x) (Variable z)))) |}] ;
   print_exp "x + !y * z" ;
   [%expect
-    {| (OK (Binary + (Variable x) (Binary * (Unary ! (Variable y)) (Variable z)))) |}]
+    {| (Ok (Binary + (Variable x) (Unary ! (Binary * (Variable y) (Variable z))))) |}]
