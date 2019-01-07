@@ -1,25 +1,21 @@
 open Core
 
-let parse_and_print lexbuf =
-  let expr = Menhir_parser.single_expr Ocamllexer.read lexbuf in 
-  printf !"%{sexp: Ast.Expr.t}\n" (Ast.Expr.of_no_binop expr)
+let supplier =
+  Menhir_parser.MenhirInterpreter.lexer_lexbuf_to_supplier Ocamllexer.read
+    (Lexing.from_channel In_channel.stdin)
 
-let rec get_full_expr accum =
-  Out_channel.(flush stdout);
-  let new_line = In_channel.(input_line_exn stdin) in
-  match String.mem new_line ';' with
-  | true -> List.rev (new_line :: accum) |> String.concat ~sep:"\n"
-  | false -> get_full_expr (new_line :: accum)
+let new_incremental () = Menhir_parser.Incremental.single_expr Lexing.dummy_pos
 
 let run_main () =
-  let rec loop () =
-  let input = get_full_expr [] in
-  printf !"got input %s\n" input;
-  parse_and_print (Lexing.from_string input);
-  loop ()
+  let rec run_loop () =
+    let incremental = new_incremental () in
+    let ast = Menhir_parser.MenhirInterpreter.loop supplier incremental in
+    printf !"%{sexp: Ast.Expr.t}\n" (Ast.Expr.of_no_binop ast) ;
+    Out_channel.flush (Out_channel.stdout);
+    run_loop ()
   in
-  Hashtbl.add_exn Ast.binop_precedence ~key:'<' ~data:10;
-  Hashtbl.add_exn Ast.binop_precedence ~key:'+' ~data:20;
-  Hashtbl.add_exn Ast.binop_precedence ~key:'-' ~data:20;
-  Hashtbl.add_exn Ast.binop_precedence ~key:'*' ~data:40;
-  loop ()
+  Hashtbl.add_exn Ast.binop_precedence ~key:'<' ~data:10 ;
+  Hashtbl.add_exn Ast.binop_precedence ~key:'+' ~data:20 ;
+  Hashtbl.add_exn Ast.binop_precedence ~key:'-' ~data:20 ;
+  Hashtbl.add_exn Ast.binop_precedence ~key:'*' ~data:40 ;
+  run_loop ()

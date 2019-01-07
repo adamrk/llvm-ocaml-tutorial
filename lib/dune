@@ -9,7 +9,8 @@
    llvm.analysis
    llvm.executionengine
    llvm.target
-   llvm.scalar_opts)
+   llvm.scalar_opts
+   menhirLib)
  (preprocess (pps ppx_jane ppx_expect ppx_let))
  (inline_tests))
 
@@ -21,4 +22,8 @@
 (rule 
  (targets menhir_parser.mli menhir_parser.ml)
   (deps menhir_parser.mly)
-  (action (ignore-stderr (run menhir --external-tokens Ast --explain %{deps}))))
+  (action (ignore-stderr (run menhir --external-tokens Ast --explain --table %{deps}))))
+
+(env
+ (dev
+  (flags (:standard -warn-error -9))))
