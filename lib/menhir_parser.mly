@@ -19,7 +19,9 @@
 %}
 
 %start <Ast.Expr.No_binop.t list> prog
-%start <Ast.Expr.No_binop.t> single_expr
+%start < [`Expr of Ast.Expr.No_binop.func 
+         | `Extern of Ast.proto 
+         | `Def of Ast.Expr.No_binop.func ]> toplevel
 %%
 
 prog:
@@ -46,5 +48,17 @@ expr:
     | _  -> Expr.No_binop.Bin_list (lhs, rest) 
   }
 
-single_expr:
-  | e = expr; SEMICOLON { e }
+prototype:
+  | name = IDENT; args = delimited(LEFT_PAREN, list(IDENT), RIGHT_PAREN)
+    { Prototype (name, args) }
+
+definition:
+  | DEF; proto = prototype; body = expr { Expr.No_binop.Function (proto, body) }
+
+extern:
+  | EXTERN; proto = prototype { proto }
+
+toplevel:
+  | e = expr; SEMICOLON { `Expr (Expr.No_binop.Function (Prototype ("", []), e)) }
+  | e = extern; SEMICOLON { `Extern e } 
+  | d = definition; SEMICOLON { `Def d }

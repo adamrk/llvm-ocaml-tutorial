@@ -13,6 +13,8 @@ type token =
   | EOF
 [@@deriving sexp]
 
+type proto = Prototype of string * string list [@@deriving sexp]
+
 module Expr = struct
   module No_binop = struct
     type t =
@@ -21,6 +23,8 @@ module Expr = struct
       | Bin_list of t * (char * int * t) list
       | Call of string * t list
     [@@deriving sexp]
+
+    type func = Function of proto * t [@@deriving sexp]
 
     let rec reduce first rest =
       match rest with
@@ -94,9 +98,10 @@ module Expr = struct
     |}]
 end
 
-type proto = Prototype of string * string array [@@deriving sexp]
-
 type func = Function of proto * Expr.t [@@deriving sexp]
+
+let func_of_no_binop_func (Expr.No_binop.Function (proto, body)) =
+  Function (proto, Expr.of_no_binop body)
 
 let binop_precedence : (char, int) Hashtbl.t = Hashtbl.create (module Char)
 

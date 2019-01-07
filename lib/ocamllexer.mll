@@ -28,9 +28,9 @@
     parse 
     | white    { read lexbuf }
     | newline  { next_line lexbuf; read lexbuf }
-    | id       { IDENT (Lexing.lexeme lexbuf) |> echo}
     | "def"    { DEF |> echo}
     | "extern" { EXTERN |> echo}
+    | id       { IDENT (Lexing.lexeme lexbuf) |> echo}
     | float    { NUMBER (float_of_string (Lexing.lexeme lexbuf)) |> echo}
     | "("      { LEFT_PAREN |> echo}
     | ")"      { RIGHT_PAREN |> echo}
