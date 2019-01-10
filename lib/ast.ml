@@ -104,5 +104,3 @@ let func_of_no_binop_func (Expr.No_binop.Function (proto, body)) =
   Function (proto, Expr.of_no_binop body)
 
 let binop_precedence : (char, int) Hashtbl.t = Hashtbl.create (module Char)
-
-let counts = ref 0

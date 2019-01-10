@@ -9,16 +9,26 @@ let new_incremental () = Menhir_parser.Incremental.toplevel Lexing.dummy_pos
 let run_main () =
   let rec run_loop () =
     let incremental = new_incremental () in
+    printf "\nready> ";
+    Out_channel.flush stdout;
     ( match Menhir_parser.MenhirInterpreter.loop supplier incremental with
     | `Expr ast ->
-        printf "parsed a toplevel expression\n";
-        printf !"%{sexp: Ast.func}\n" (Ast.func_of_no_binop_func ast)
+        printf "parsed a toplevel expression";
+        let func = (Ast.func_of_no_binop_func ast) in
+        (* printf !"%{sexp: Ast.func}\n" func; *)
+        Out_channel.flush stdout;
+        Llvm.dump_value (Codegen.codegen_func func)
     | `Extern ext -> 
-        printf "parsed an extern\n";
-        printf !"%{sexp: Ast.proto}\n" ext
+        printf "parsed an extern";
+        (* printf !"%{sexp: Ast.proto}\n" ext; *)
+        Out_channel.flush stdout;
+        Llvm.dump_value (Codegen.codegen_proto ext)
     | `Def def -> 
-        printf "parsed a definition\n";
-        printf !"%{sexp: Ast.func}\n" (Ast.func_of_no_binop_func def)
+        printf "parsed a definition";
+        let func = (Ast.func_of_no_binop_func def) in
+        (* printf !"%{sexp: Ast.func}\n" func; *)
+        Out_channel.flush stdout;
+        Llvm.dump_value (Codegen.codegen_func func) 
     ) ;
     Out_channel.flush Out_channel.stdout ;
     run_loop ()

@@ -13,7 +13,7 @@
       }
 
   let echo token =
-    printf !"token: %{sexp: token}\n" token;
+    (* printf !"token: %{sexp: token}\n" token; *)
     token
 }
 
