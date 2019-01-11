@@ -212,8 +212,7 @@ let create_argument_allocas the_function proto =
       Llvm.build_store ai alloca builder |> ignore ;
       Old_hashtbl.add named_values var_name alloca )
   *)
-
-let codegen_func = function
+let codegen_func the_fpm = function
   | Ast.Function (proto, body) -> (
       Hashtbl.clear named_values ;
       let the_function, existing = codegen_proto_existing proto in
@@ -238,7 +237,7 @@ let codegen_func = function
               (Llvm.string_of_llvalue the_function) ;
             Llvm_analysis.assert_valid_function the_function ) ;
         (* optimize!! *)
-        (* let _ = Llvm.PassManager.run_function the_function the_fpm in *)
+        let (_ : bool) = Llvm.PassManager.run_function the_function the_fpm in 
         the_function
       with e ->
         ( match existing with
