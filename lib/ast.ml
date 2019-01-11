@@ -103,4 +103,11 @@ type func = Function of proto * Expr.t [@@deriving sexp]
 let func_of_no_binop_func (Expr.No_binop.Function (proto, body)) =
   Function (proto, Expr.of_no_binop body)
 
+let set_func_name name (Function (proto, body)) =
+  let new_proto =
+    match proto with Prototype ((_name : string), args) ->
+      Prototype (name, args)
+  in
+  Function (new_proto, body)
+
 let binop_precedence : (char, int) Hashtbl.t = Hashtbl.create (module Char)
