@@ -3,11 +3,17 @@ open Core
 type token =
   | DEF
   | EXTERN
+  | IF
+  | THEN
+  | ELSE
+  | FOR
+  | IN
   | IDENT of string
   | NUMBER of float
   | KWD of char
   | LEFT_PAREN
   | RIGHT_PAREN
+  | EQUALS
   | COMMA
   | SEMICOLON
   | EOF
@@ -22,6 +28,8 @@ module Expr = struct
       | Variable of string
       | Bin_list of t * (char * int * t) list
       | Call of string * t list
+      | If of t * t * t
+      | For of string * t * t * t option * t
     [@@deriving sexp]
 
     type func = Function of proto * t [@@deriving sexp]
@@ -61,12 +69,23 @@ module Expr = struct
     | Variable of string
     | Binary of char * t * t
     | Call of string * t list
+    | If of t * t * t
+    | For of string * t * t * t option * t
   [@@deriving sexp]
 
   let rec of_no_binop = function
     | No_binop.Number f -> Number f
     | No_binop.Variable x -> Variable x
     | No_binop.Call (f, args) -> Call (f, List.map args ~f:of_no_binop)
+    | No_binop.If (if_, then_, else_) ->
+        If (of_no_binop if_, of_no_binop then_, of_no_binop else_)
+    | No_binop.For (id, start, end_, step, body) ->
+        For
+          ( id
+          , of_no_binop start
+          , of_no_binop end_
+          , Option.map step ~f:of_no_binop
+          , of_no_binop body )
     | No_binop.Bin_list (first, []) -> of_no_binop first
     | No_binop.Bin_list (first, [(op, _prec, second)]) ->
         Binary (op, of_no_binop first, of_no_binop second)

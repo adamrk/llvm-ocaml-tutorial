@@ -1,8 +1,14 @@
 %token DEF
 %token EXTERN
+%token IF
+%token THEN
+%token ELSE
+%token FOR
+%token IN
 %token <string> IDENT
 %token <float> NUMBER
 %token <char> KWD
+%token EQUALS
 %token LEFT_PAREN
 %token RIGHT_PAREN
 %token COMMA
@@ -35,6 +41,10 @@ primary:
   | id = IDENT; args = delimited(LEFT_PAREN, separated_list(COMMA, expr), RIGHT_PAREN) 
     { (* printf !"got id %s\n" id; *) Expr.No_binop.Call (id, args) }
   | id = IDENT; { Expr.No_binop.Variable id }
+  | IF; c = expr; THEN; t = expr; ELSE; e = expr { Expr.No_binop.If (c, t, e) }
+  | FOR; id = IDENT; EQUALS; start = expr; COMMA; end_ = expr; COMMA; 
+    step = option(expr); IN; body = expr 
+    { Expr.No_binop.For (id, start, end_, step, body) }
   ;
 
 rhs: op = KWD; expr = primary { (op, precedence op, expr) }

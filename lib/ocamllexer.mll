@@ -28,16 +28,22 @@
     parse 
     | white    { read lexbuf }
     | newline  { next_line lexbuf; read lexbuf }
-    | "def"    { DEF |> echo}
-    | "extern" { EXTERN |> echo}
-    | id       { IDENT (Lexing.lexeme lexbuf) |> echo}
-    | float    { NUMBER (float_of_string (Lexing.lexeme lexbuf)) |> echo}
-    | "("      { LEFT_PAREN |> echo}
-    | ")"      { RIGHT_PAREN |> echo}
-    | ","      { COMMA |> echo}
-    | ";"      { SEMICOLON |> echo}
-    | _        { KWD (Lexing.lexeme_char lexbuf 0) |> echo}
-    | eof      { EOF |> echo}
+    | "def"    { DEF |> echo }
+    | "extern" { EXTERN |> echo }
+    | "if"     { IF |> echo }
+    | "then"   { THEN |> echo }
+    | "else"   { ELSE |> echo }
+    | "for"    { FOR |> echo }
+    | "in"     { IN |> echo }
+    | id       { IDENT (Lexing.lexeme lexbuf) |> echo }
+    | float    { NUMBER (float_of_string (Lexing.lexeme lexbuf)) |> echo }
+    | "="      { EQUALS |> echo }
+    | "("      { LEFT_PAREN |> echo }
+    | ")"      { RIGHT_PAREN |> echo }
+    | ","      { COMMA |> echo }
+    | ";"      { SEMICOLON |> echo }
+    | _        { KWD (Lexing.lexeme_char lexbuf 0) |> echo }
+    | eof      { EOF |> echo }
 
   and read_comment =
     parse
