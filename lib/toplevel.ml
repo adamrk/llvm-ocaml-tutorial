@@ -32,7 +32,7 @@ let run_main () =
         Out_channel.flush stdout ;
         Llvm_executionengine.add_module Codegen.the_module the_execution_engine ;
         anonymous_func_count := !anonymous_func_count + 1 ;
-        let tmp_name = sprintf "_anonymous_func_%d" !anonymous_func_count in
+        let tmp_name = sprintf "_func_%d" !anonymous_func_count in
         let tmp_func = Ast.set_func_name tmp_name func in
         let the_function = Codegen.codegen_func the_fpm tmp_func in
         Llvm.dump_value the_function ;

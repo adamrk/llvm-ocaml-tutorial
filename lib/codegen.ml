@@ -176,6 +176,7 @@ let rec codegen_expr = function
 
 let codegen_proto_existing = function
   | Ast.Prototype (name, args) ->
+      Hashtbl.clear named_values ;
       let doubles = Array.create ~len:(List.length args) double_type in
       let ft = Llvm.function_type double_type doubles in
       let f, existing =
@@ -214,7 +215,6 @@ let create_argument_allocas the_function proto =
   *)
 let codegen_func the_fpm = function
   | Ast.Function (proto, body) -> (
-      Hashtbl.clear named_values ;
       let the_function, existing = codegen_proto_existing proto in
       (* install an operator *)
       (*
