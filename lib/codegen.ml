@@ -11,13 +11,11 @@ let named_values : (string, Llvm.llvalue) Hashtbl.t =
 
 let double_type = Llvm.double_type context
 
-(*
-let _create_entry_block_alloca the_function var_name =
+let create_entry_block_alloca the_function var_name =
   let builder =
     Llvm.builder_at context (Llvm.instr_begin (Llvm.entry_block the_function))
   in
   Llvm.build_alloca double_type var_name builder
-  *)
 
 let rec codegen_expr = function
   (*
@@ -46,26 +44,25 @@ let rec codegen_expr = function
   | Ast.Expr.Variable name -> (
     match Hashtbl.find named_values name with
     | None -> raise_s [%message "unkown variable name" (name : string)]
-    | Some v -> v )
+    | Some v -> Llvm.build_load v name builder )
+  | Ast.Expr.Binary ('=', lhs, rhs) ->
+      let name =
+        match lhs with
+        | Ast.Expr.Variable name -> name
+        | _ -> raise_s [%message "destination of '=' must be a variable"]
+      in
+      let val_ = codegen_expr rhs in
+      let variable =
+        match Hashtbl.find named_values name with
+        | None -> raise_s [%message "unknown variable name" (name : string)]
+        | Some var -> var
+      in
+      Llvm.build_store val_ variable builder |> ignore ;
+      val_
   | Ast.Expr.Binary (op, lhs, rhs) -> (
       let lhs_val = codegen_expr lhs in
       let rhs_val = codegen_expr rhs in
       match op with
-      (*
-      | '=' ->
-          let name =
-            match lhs with
-            | Lexer.Expr.Variable name -> name
-            | _ -> raise_s [%message "destination of '=' must be a variable"]
-          in
-          let val_ = codegen_expr rhs in
-          let variable =
-            try Old_hashtbl.find named_values name with _ ->
-              raise_s [%message "unknown variable name" (name : string)]
-          in
-          Llvm.build_store val_ variable builder |> ignore ;
-          val_
-          *)
       | '+' -> Llvm.build_fadd lhs_val rhs_val "addtmp" builder
       | '-' -> Llvm.build_fsub lhs_val rhs_val "subtmp" builder
       | '*' -> Llvm.build_fmul lhs_val rhs_val "multmp" builder
@@ -127,37 +124,33 @@ let rec codegen_expr = function
       Llvm.position_at_end merge_bb builder ;
       phi
   | Ast.Expr.For (var_name, start, end_, step, body) ->
+      let the_function = Llvm.block_parent (Llvm.insertion_block builder) in
+      let alloca = create_entry_block_alloca the_function var_name in
       let start_val = codegen_expr start in
-      let preheader_bb = Llvm.insertion_block builder in
-      let the_function = Llvm.block_parent preheader_bb in
-      (*let alloca = create_entry_block_alloca the_function var_name in*)
-      (*Llvm.build_store start_val alloca builder |> ignore ;*)
+      Llvm.build_store start_val alloca builder |> ignore ;
       let loop_bb = Llvm.append_block context "loop" the_function in
       (* explicit fall through to loop_bb *)
       Llvm.build_br loop_bb builder |> ignore ;
       Llvm.position_at_end loop_bb builder ;
-      let variable =
-        Llvm.build_phi [(start_val, preheader_bb)] var_name builder
-      in
       let old_val = Hashtbl.find named_values var_name in
-      Hashtbl.set named_values ~key:var_name ~data:variable ;
+      Hashtbl.set named_values ~key:var_name ~data:alloca ;
       codegen_expr body |> ignore ;
       let step_val =
         match step with
         | Some step -> codegen_expr step
         | None -> Llvm.const_float double_type 1.0
       in
-      let next_var = Llvm.build_fadd variable step_val "nextvar" builder in
       let end_cond = codegen_expr end_ in
+      let cur_var = Llvm.build_load alloca var_name builder in
+      let next_var = Llvm.build_fadd cur_var step_val "nextvar" builder in
+      Llvm.build_store next_var alloca builder |> ignore ;
       let zero = Llvm.const_float double_type 0.0 in
       let end_cond =
         Llvm.build_fcmp Llvm.Fcmp.One end_cond zero "loopcond" builder
       in
-      let loop_end_bb = Llvm.insertion_block builder in
       let after_bb = Llvm.append_block context "afterloop" the_function in
       Llvm.build_cond_br end_cond loop_bb after_bb builder |> ignore ;
       Llvm.position_at_end after_bb builder ;
-      Llvm.add_incoming (next_var, loop_end_bb) variable ;
       ( match old_val with
       | Some old_val -> Hashtbl.set named_values ~key:var_name ~data:old_val
       | None -> () ) ;
@@ -197,20 +190,17 @@ let codegen_proto_existing = function
           Hashtbl.add_exn named_values ~key:name ~data:a ) ;
       (f, existing)
 
-(*
 let create_argument_allocas the_function proto =
   let args =
     match proto with
-    | Lexer.Prototype.Prototype (_, args)
-     |Lexer.Prototype.BinOpPrototype (_, args, _) ->
-        args
+    | Ast.Prototype (_, args) | Ast.BinOpPrototype (_, args, _) -> args
   in
   Array.iteri (Llvm.params the_function) ~f:(fun i ai ->
-      let var_name = args.(i) in
+      let var_name = List.nth_exn args i in
       let alloca = create_entry_block_alloca the_function var_name in
       Llvm.build_store ai alloca builder |> ignore ;
-      Old_hashtbl.add named_values var_name alloca )
-  *)
+      Hashtbl.set named_values ~key:var_name ~data:alloca )
+
 let codegen_func the_fpm = function
   | Ast.Function (proto, body) -> (
       let the_function, existing = codegen_proto_existing proto in
@@ -223,7 +213,7 @@ let codegen_func the_fpm = function
       let bb = Llvm.append_block context "entry" the_function in
       Llvm.position_at_end bb builder ;
       try
-        (* create_argument_allocas the_function proto ; *)
+        create_argument_allocas the_function proto ;
         let return_val = codegen_expr body in
         let _ : Llvm.llvalue = Llvm.build_ret return_val builder in
         ( match Llvm_analysis.verify_function the_function with

@@ -32,7 +32,7 @@ let run_main input =
         Out_channel.flush stdout ;
         Llvm_executionengine.add_module Codegen.the_module the_execution_engine ;
         anonymous_func_count := !anonymous_func_count + 1 ;
-        let tmp_name = sprintf "_func_%d" !anonymous_func_count in
+        let tmp_name = sprintf "__anon_func_%d" !anonymous_func_count in
         let tmp_func = Ast.set_func_name tmp_name func in
         let the_function = Codegen.codegen_func the_fpm tmp_func in
         Llvm.dump_value the_function ;
@@ -54,10 +54,8 @@ let run_main input =
         let func = Ast.func_of_no_binop_func def in
         (* printf !"%{sexp: Ast.func}\n" func; *)
         Out_channel.flush stdout ;
-        Llvm.dump_value (Codegen.codegen_func the_fpm func) 
-    | `Eof ->
-        printf "reached eof\n";
-        exit 0) ;
+        Llvm.dump_value (Codegen.codegen_func the_fpm func)
+    | `Eof -> printf "reached eof\n" ; exit 0 ) ;
     Out_channel.flush Out_channel.stdout ;
     run_loop the_fpm the_execution_engine supplier
   in
@@ -65,6 +63,7 @@ let run_main input =
   Hashtbl.add_exn Ast.binop_precedence ~key:'+' ~data:20 ;
   Hashtbl.add_exn Ast.binop_precedence ~key:'-' ~data:20 ;
   Hashtbl.add_exn Ast.binop_precedence ~key:'*' ~data:40 ;
+  Hashtbl.add_exn Ast.binop_precedence ~key:'=' ~data:2 ;
   let f in_channel =
     let supplier =
       Menhir_parser.MenhirInterpreter.lexer_lexbuf_to_supplier Ocamllexer.read
