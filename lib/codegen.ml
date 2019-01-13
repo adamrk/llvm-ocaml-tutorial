@@ -74,8 +74,7 @@ let rec codegen_expr = function
             Llvm.build_fcmp Llvm.Fcmp.Ult lhs_val rhs_val "cmptmp" builder
           in
           Llvm.build_uitofp i double_type "booltmp" builder
-      | _ -> raise_s [%message "operator not recognized"]
-      (*
+      | _ ->
           let callee = "binary" ^ String.make 1 op in
           let callee =
             match Llvm.lookup_function callee the_module with
@@ -83,8 +82,6 @@ let rec codegen_expr = function
             | None -> raise_s [%message "unrecognized binop" (op : char)]
           in
           Llvm.build_call callee [|lhs_val; rhs_val|] "binop" builder )
-  *)
-      )
   | Ast.Expr.Call (callee_name, args) ->
       let callee =
         match Llvm.lookup_function callee_name the_module with
@@ -165,9 +162,7 @@ let rec codegen_expr = function
       | Some old_val -> Hashtbl.set named_values ~key:var_name ~data:old_val
       | None -> () ) ;
       Llvm.const_null double_type
-
-(*
-  | Lexer.Expr.Unary (op, operand) ->
+  | Ast.Expr.Unary (op, operand) ->
       let operand = codegen_expr operand in
       let callee = "unary" ^ String.make 1 op in
       let callee =
@@ -176,10 +171,9 @@ let rec codegen_expr = function
         | None -> raise_s [%message "unknown unary operator" (op : char)]
       in
       Llvm.build_call callee [|operand|] "unop" builder
-      *)
 
 let codegen_proto_existing = function
-  | Ast.Prototype (name, args) ->
+  | Ast.Prototype (name, args) | Ast.BinOpPrototype (name, args, _) ->
       Hashtbl.clear named_values ;
       let doubles = Array.create ~len:(List.length args) double_type in
       let ft = Llvm.function_type double_type doubles in
@@ -221,13 +215,11 @@ let codegen_func the_fpm = function
   | Ast.Function (proto, body) -> (
       let the_function, existing = codegen_proto_existing proto in
       (* install an operator *)
-      (*
       ( match proto with
-      | Lexer.Prototype.BinOpPrototype (name, _args, prec) ->
+      | Ast.BinOpPrototype (name, _args, prec) ->
           let op = name.[String.length name - 1] in
-          Old_hashtbl.add Lexer.binop_precedence op prec
+          Hashtbl.add_exn Ast.binop_precedence ~key:op ~data:prec
       | _ -> () ) ;
-      *)
       let bb = Llvm.append_block context "entry" the_function in
       Llvm.position_at_end bb builder ;
       try

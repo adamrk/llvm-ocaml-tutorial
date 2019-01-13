@@ -18,7 +18,7 @@ let setup_pass_manager () =
 
 let new_incremental () = Menhir_parser.Incremental.toplevel Lexing.dummy_pos
 
-let run_main () =
+let run_main input =
   let anonymous_func_count = ref 0 in
   let rec run_loop the_fpm the_execution_engine supplier =
     let incremental = new_incremental () in
@@ -54,7 +54,10 @@ let run_main () =
         let func = Ast.func_of_no_binop_func def in
         (* printf !"%{sexp: Ast.func}\n" func; *)
         Out_channel.flush stdout ;
-        Llvm.dump_value (Codegen.codegen_func the_fpm func) ) ;
+        Llvm.dump_value (Codegen.codegen_func the_fpm func) 
+    | `Eof ->
+        printf "reached eof\n";
+        exit 0) ;
     Out_channel.flush Out_channel.stdout ;
     run_loop the_fpm the_execution_engine supplier
   in
@@ -62,10 +65,15 @@ let run_main () =
   Hashtbl.add_exn Ast.binop_precedence ~key:'+' ~data:20 ;
   Hashtbl.add_exn Ast.binop_precedence ~key:'-' ~data:20 ;
   Hashtbl.add_exn Ast.binop_precedence ~key:'*' ~data:40 ;
-  let supplier =
-    Menhir_parser.MenhirInterpreter.lexer_lexbuf_to_supplier Ocamllexer.read
-      (Lexing.from_channel In_channel.stdin)
+  let f in_channel =
+    let supplier =
+      Menhir_parser.MenhirInterpreter.lexer_lexbuf_to_supplier Ocamllexer.read
+        (Lexing.from_channel in_channel)
+    in
+    let the_execution_engine = setup_execution_engine () in
+    let the_fpm = setup_pass_manager () in
+    run_loop the_fpm the_execution_engine supplier
   in
-  let the_execution_engine = setup_execution_engine () in
-  let the_fpm = setup_pass_manager () in
-  run_loop the_fpm the_execution_engine supplier
+  match input with
+  | `Stdin -> f In_channel.stdin
+  | `File file -> In_channel.with_file file ~f

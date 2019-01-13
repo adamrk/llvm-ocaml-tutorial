@@ -35,6 +35,8 @@
     | "else"   { ELSE |> echo }
     | "for"    { FOR |> echo }
     | "in"     { IN |> echo }
+    | "binary" { BINARY |> echo }
+    | "unary"  { UNARY |> echo }
     | id       { IDENT (Lexing.lexeme lexbuf) |> echo }
     | float    { NUMBER (float_of_string (Lexing.lexeme lexbuf)) |> echo }
     | "="      { EQUALS |> echo }

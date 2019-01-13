@@ -5,6 +5,8 @@
 %token ELSE
 %token FOR
 %token IN
+%token BINARY
+%token UNARY
 %token <string> IDENT
 %token <float> NUMBER
 %token <char> KWD
@@ -27,7 +29,8 @@
 %start <Ast.Expr.No_binop.t list> prog
 %start < [`Expr of Ast.Expr.No_binop.func 
          | `Extern of Ast.proto 
-         | `Def of Ast.Expr.No_binop.func ]> toplevel
+         | `Def of Ast.Expr.No_binop.func 
+         | `Eof ]> toplevel
 %%
 
 prog:
@@ -47,10 +50,14 @@ primary:
     { Expr.No_binop.For (id, start, end_, step, body) }
   ;
 
-rhs: op = KWD; expr = primary { (op, precedence op, expr) }
+unary: 
+  | op = operator; operand = expr { Expr.No_binop.Unary (op, operand) }
+  | otherwise = primary      { otherwise }
+
+rhs: op = KWD; expr = unary { (op, precedence op, expr) }
 
 expr: 
-  | lhs = primary; rest = list(rhs) 
+  | lhs = unary; rest = list(rhs) 
   { (* printf !"lhs: %{sexp:Expr.No_binop.t}, rhs: %{sexp: (char * int * Expr.No_binop.t) list}\n" 
      lhs rest; *)
     match rest with
@@ -61,6 +68,33 @@ expr:
 prototype:
   | name = IDENT; args = delimited(LEFT_PAREN, list(IDENT), RIGHT_PAREN)
     { Prototype (name, args) }
+  | kind = operator_kind; op = operator; prec = precedence; 
+    args = delimited(LEFT_PAREN, list(IDENT), RIGHT_PAREN) 
+    { match kind with
+      | `Binary -> 
+          if Int.(<>) (List.length args) 2 
+          then raise_s 
+            [%message "binary operator doesn't have 2 arguments" (args : string list)]
+          else 
+            Ast.BinOpPrototype ("binary" ^ String.of_char op, args, prec)
+      | `Unary ->
+          if Int.(<>) (List.length args) 1 
+          then raise_s 
+            [%message "unary operator doesn't have 1 argument" (args : string list)]
+          else 
+            Ast.Prototype ("unary" ^ String.of_char op, args)
+    }
+
+operator:
+  | op = KWD { op }
+  | EQUALS   { '=' }
+
+operator_kind:
+  | UNARY  { `Unary }
+  | BINARY { `Binary }
+
+precedence:
+  | n = option(NUMBER) { Int.of_float (Option.value n ~default:30.0) }
 
 definition:
   | DEF; proto = prototype; body = expr { Expr.No_binop.Function (proto, body) }
@@ -72,3 +106,4 @@ toplevel:
   | e = expr; SEMICOLON { `Expr (Expr.No_binop.Function (Prototype ("", []), e)) }
   | e = extern; SEMICOLON { `Extern e } 
   | d = definition; SEMICOLON { `Def d }
+  | EOF { `Eof }
