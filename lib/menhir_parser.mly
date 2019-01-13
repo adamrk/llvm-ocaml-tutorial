@@ -36,6 +36,13 @@
 prog:
   | es = separated_list(SEMICOLON, expr); EOF  { es }
   ;
+
+toplevel:
+  | e = expr; SEMICOLON { `Expr (Expr.No_binop.Function (Prototype ("", []), e)) }
+  | e = extern; SEMICOLON { `Extern e } 
+  | d = definition; SEMICOLON { `Def d }
+  | EOF { `Eof }
+  ;
   
 primary:
   | f = NUMBER 
@@ -44,6 +51,9 @@ primary:
   | id = IDENT; args = delimited(LEFT_PAREN, separated_list(COMMA, expr), RIGHT_PAREN) 
     { (* printf !"got id %s\n" id; *) Expr.No_binop.Call (id, args) }
   | id = IDENT; { Expr.No_binop.Variable id }
+  ;
+
+block:
   | IF; c = expr; THEN; t = expr; ELSE; e = expr { Expr.No_binop.If (c, t, e) }
   | FOR; id = IDENT; EQUALS; start = expr; COMMA; end_ = expr; COMMA; 
     step = option(expr); IN; body = expr 
@@ -51,10 +61,14 @@ primary:
   ;
 
 unary: 
-  | op = operator; operand = expr { Expr.No_binop.Unary (op, operand) }
-  | otherwise = primary      { otherwise }
+  | op = operator; operand = expr_wo_rhs { Expr.No_binop.Unary (op, operand) }
+  | e = primary                          { e }
 
-rhs: op = KWD; expr = unary { (op, precedence op, expr) }
+rhs: 
+  | op = operator; unop = operator; e = expr_wo_rhs 
+    { (op, precedence op, Expr.No_binop.Unary (unop, e)) }
+  | op = operator; e = primary
+    { (op, precedence op, e ) }
 
 expr: 
   | lhs = unary; rest = list(rhs) 
@@ -64,6 +78,9 @@ expr:
     | [] -> lhs
     | _  -> Expr.No_binop.Bin_list (lhs, rest) 
   }
+  | e = block { e }
+
+expr_wo_rhs: e = unary { e }
 
 prototype:
   | name = IDENT; args = delimited(LEFT_PAREN, list(IDENT), RIGHT_PAREN)
@@ -102,8 +119,3 @@ definition:
 extern:
   | EXTERN; proto = prototype { proto }
 
-toplevel:
-  | e = expr; SEMICOLON { `Expr (Expr.No_binop.Function (Prototype ("", []), e)) }
-  | e = extern; SEMICOLON { `Extern e } 
-  | d = definition; SEMICOLON { `Def d }
-  | EOF { `Eof }

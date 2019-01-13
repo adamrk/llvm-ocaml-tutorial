@@ -26,6 +26,18 @@ let%expect_test _ =
      (Function (BinOpPrototype binary= (LHS RHS) 9)
       (Unary !
        (Bin_list (Variable LHS)
-    ((< -1 (Variable RHS)) (| -1 (Variable LHS)) (> -1 (Variable RHS))))))) |}];
-    print_parsed "";
-    [%expect {| |}]
+        ((< -1 (Variable RHS)) (| -1 (Variable LHS)) (> -1 (Variable RHS))))))) |}];
+  print_parsed "";
+  [%expect {| Eof |}];
+  print_parsed "!a | x;";
+  [%expect
+    {|
+    (Expr
+     (Function (Prototype "" ())
+      (Bin_list (Unary ! (Variable a)) ((| -1 (Variable x)))))) |}] ;
+  print_parsed "if x > 0 then 1 else x + 10;";
+  [%expect {|
+    (Expr
+     (Function (Prototype "" ())
+      (If (Bin_list (Variable x) ((> -1 (Number 0)))) (Number 1)
+       (Bin_list (Variable x) ((+ -1 (Number 10))))))) |}];
