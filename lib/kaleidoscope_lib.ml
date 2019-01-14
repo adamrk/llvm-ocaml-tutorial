@@ -1,4 +1,4 @@
-module Lexer = Lexer
 module Codegen = Codegen
+module Lexer = Lexer
+module Parser = Parser
 module Toplevel = Toplevel
-module Ocamllexer = Ocamllexer

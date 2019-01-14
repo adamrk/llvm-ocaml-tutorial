@@ -16,7 +16,7 @@ let setup_pass_manager () =
   Llvm.PassManager.initialize the_fpm |> ignore ;
   the_fpm
 
-let new_incremental () = Menhir_parser.Incremental.toplevel Lexing.dummy_pos
+let new_incremental () = Parser.Incremental.toplevel Lexing.dummy_pos
 
 let run_main input =
   let anonymous_func_count = ref 0 in
@@ -24,7 +24,7 @@ let run_main input =
     let incremental = new_incremental () in
     printf "\nready> " ;
     Out_channel.flush stdout ;
-    ( match Menhir_parser.MenhirInterpreter.loop supplier incremental with
+    ( match Parser.MenhirInterpreter.loop supplier incremental with
     | `Expr ast ->
         printf "parsed a toplevel expression" ;
         let func = Ast.func_of_no_binop_func ast in
@@ -66,7 +66,7 @@ let run_main input =
   Hashtbl.add_exn Ast.binop_precedence ~key:'=' ~data:2 ;
   let f in_channel =
     let supplier =
-      Menhir_parser.MenhirInterpreter.lexer_lexbuf_to_supplier Ocamllexer.read
+      Parser.MenhirInterpreter.lexer_lexbuf_to_supplier Lexer.read
         (Lexing.from_channel in_channel)
     in
     let the_execution_engine = setup_execution_engine () in

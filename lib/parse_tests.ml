@@ -4,7 +4,7 @@ let print_parsed s =
   printf
     !"%{sexp: [`Expr of Ast.Expr.No_binop.func | `Extern of Ast.proto | `Def \
       of Ast.Expr.No_binop.func | `Eof ]}"
-    (Menhir_parser.toplevel Ocamllexer.read (Lexing.from_string s))
+    (Parser.toplevel Lexer.read (Lexing.from_string s))
 
 let%expect_test _ =
   print_parsed "LHS < RHS;" ;
