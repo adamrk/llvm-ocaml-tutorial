@@ -10,6 +10,7 @@ type token =
   | IN
   | BINARY
   | UNARY
+  | VAR
   | IDENT of string
   | NUMBER of float
   | KWD of char
@@ -21,9 +22,10 @@ type token =
   | EOF
 [@@deriving sexp]
 
-type proto = 
-  | Prototype of string * string list 
-  | BinOpPrototype of string * string list * int [@@deriving sexp]
+type proto =
+  | Prototype of string * string list
+  | BinOpPrototype of string * string list * int
+[@@deriving sexp]
 
 module Expr = struct
   module No_binop = struct
@@ -35,6 +37,7 @@ module Expr = struct
       | If of t * t * t
       | For of string * t * t * t option * t
       | Unary of char * t
+      | Var of (string * t option) list * t
     [@@deriving sexp]
 
     type func = Function of proto * t [@@deriving sexp]
@@ -77,6 +80,7 @@ module Expr = struct
     | If of t * t * t
     | For of string * t * t * t option * t
     | Unary of char * t
+    | Var of (string * t option) list * t
   [@@deriving sexp]
 
   let rec of_no_binop = function
@@ -93,6 +97,11 @@ module Expr = struct
           , Option.map step ~f:of_no_binop
           , of_no_binop body )
     | No_binop.Unary (c, t) -> Unary (c, of_no_binop t)
+    | No_binop.Var (vars, body) ->
+        Var
+          ( List.map vars ~f:(fun (name, expr) ->
+                (name, Option.map expr ~f:of_no_binop) )
+          , of_no_binop body )
     | No_binop.Bin_list (first, []) -> of_no_binop first
     | No_binop.Bin_list (first, [(op, _prec, second)]) ->
         Binary (op, of_no_binop first, of_no_binop second)
@@ -131,7 +140,7 @@ let func_of_no_binop_func (Expr.No_binop.Function (proto, body)) =
 
 let set_func_name name (Function (proto, body)) =
   let new_proto =
-    match proto with 
+    match proto with
     | Prototype ((_name : string), args) -> Prototype (name, args)
     | BinOpPrototype ((_name : string), args, prec) ->
         BinOpPrototype (name, args, prec)

@@ -18,11 +18,10 @@ let create_entry_block_alloca the_function var_name =
   Llvm.build_alloca double_type var_name builder
 
 let rec codegen_expr = function
-  (*
-  | Lexer.Expr.Var (var_names, body) ->
+  | Ast.Expr.Var (var_names, body) ->
       let old_bindings = ref [] in
       let the_function = Llvm.block_parent (Llvm.insertion_block builder) in
-      Array.iter var_names ~f:(fun (var_name, init) ->
+      List.iter var_names ~f:(fun (var_name, init) ->
           let init_val =
             match init with
             | Some init -> codegen_expr init
@@ -30,16 +29,15 @@ let rec codegen_expr = function
           in
           let alloca = create_entry_block_alloca the_function var_name in
           Llvm.build_store init_val alloca builder |> ignore ;
-          ( match Old_hashtbl.find_opt named_values var_name with
+          ( match Hashtbl.find named_values var_name with
           | None -> ()
           | Some old_value ->
               old_bindings := (var_name, old_value) :: !old_bindings ) ;
-          Old_hashtbl.add named_values var_name alloca ) ;
+          Hashtbl.set named_values ~key:var_name ~data:alloca ) ;
       let body_val = codegen_expr body in
       List.iter !old_bindings ~f:(fun (var_name, old_value) ->
-          Old_hashtbl.add named_values var_name old_value ) ;
+          Hashtbl.set named_values ~key:var_name ~data:old_value ) ;
       body_val
-      *)
   | Ast.Expr.Number n -> Llvm.const_float double_type n
   | Ast.Expr.Variable name -> (
     match Hashtbl.find named_values name with

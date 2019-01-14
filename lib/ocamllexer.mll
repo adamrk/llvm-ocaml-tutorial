@@ -37,6 +37,7 @@
     | "in"     { IN |> echo }
     | "binary" { BINARY |> echo }
     | "unary"  { UNARY |> echo }
+    | "var"    { VAR |> echo }
     | id       { IDENT (Lexing.lexeme lexbuf) |> echo }
     | float    { NUMBER (float_of_string (Lexing.lexeme lexbuf)) |> echo }
     | "="      { EQUALS |> echo }

@@ -22,7 +22,7 @@
 (rule 
  (targets menhir_parser.mli menhir_parser.ml)
   (deps menhir_parser.mly)
-  (action (ignore-stderr (run menhir --external-tokens Ast --explain --table %{deps}))))
+  (action (run menhir --external-tokens Ast --explain --table %{deps})))
 
 (env
  (dev

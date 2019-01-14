@@ -7,6 +7,7 @@
 %token IN
 %token BINARY
 %token UNARY
+%token VAR
 %token <string> IDENT
 %token <float> NUMBER
 %token <char> KWD
@@ -55,20 +56,26 @@ primary:
 
 block:
   | IF; c = expr; THEN; t = expr; ELSE; e = expr { Expr.No_binop.If (c, t, e) }
-  | FOR; id = IDENT; EQUALS; start = expr; COMMA; end_ = expr; COMMA; 
-    step = option(expr); IN; body = expr 
+  | FOR; id = IDENT; EQUALS; start = expr; COMMA; end_ = expr; 
+    step = option(COMMA; e = expr { e }); IN; body = expr 
     { Expr.No_binop.For (id, start, end_, step, body) }
+  | VAR; vars = separated_nonempty_list(COMMA, var); IN; body = expr
+    { Expr.No_binop.Var (vars, body) }
   ;
+
+var: name = IDENT; e = option(EQUALS; e = expr { e }) { (name, e) }
 
 unary: 
   | op = operator; operand = expr_wo_rhs { Expr.No_binop.Unary (op, operand) }
   | e = primary                          { e }
+  ;
 
 rhs: 
   | op = operator; unop = operator; e = expr_wo_rhs 
     { (op, precedence op, Expr.No_binop.Unary (unop, e)) }
   | op = operator; e = primary
     { (op, precedence op, e ) }
+  ;
 
 expr: 
   | lhs = unary; rest = list(rhs) 
@@ -79,6 +86,7 @@ expr:
     | _  -> Expr.No_binop.Bin_list (lhs, rest) 
   }
   | e = block { e }
+  ;
 
 expr_wo_rhs: e = unary { e }
 
@@ -101,21 +109,25 @@ prototype:
           else 
             Ast.Prototype ("unary" ^ String.of_char op, args)
     }
+  ;
 
 operator:
   | op = KWD { op }
   | EQUALS   { '=' }
+  ;
 
 operator_kind:
   | UNARY  { `Unary }
   | BINARY { `Binary }
+  ;
 
 precedence:
   | n = option(NUMBER) { Int.of_float (Option.value n ~default:30.0) }
+  ;
 
 definition:
   | DEF; proto = prototype; body = expr { Expr.No_binop.Function (proto, body) }
+  ;
 
-extern:
-  | EXTERN; proto = prototype { proto }
+extern: EXTERN; proto = prototype { proto }
 
