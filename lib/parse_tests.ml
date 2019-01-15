@@ -41,3 +41,5 @@ let%expect_test _ =
      (Function (Prototype "" ())
       (If (Bin_list (Variable x) ((> -1 (Number 0)))) (Number 1)
        (Bin_list (Variable x) ((+ -1 (Number 10))))))) |}];
+  print_parsed "5 + #some comment\n5;";
+  [%expect {| (Expr (Function (Prototype "" ()) (Bin_list (Number 5) ((+ -1 (Number 5)))))) |}];

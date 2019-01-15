@@ -32,11 +32,11 @@ module Expr : sig
     type t =
       | Number of float
       | Variable of string
+      | Unary of char * t
       | Bin_list of t * (char * int * t) list
       | Call of string * t list
       | If of t * t * t
       | For of string * t * t * t option * t
-      | Unary of char * t
       | Var of (string * t option) list * t
     [@@deriving sexp]
 
@@ -46,11 +46,11 @@ module Expr : sig
   type t =
     | Number of float
     | Variable of string
+    | Unary of char * t
     | Binary of char * t * t
     | Call of string * t list
     | If of t * t * t
     | For of string * t * t * t option * t
-    | Unary of char * t
     | Var of (string * t option) list * t
   [@@deriving sexp]
 

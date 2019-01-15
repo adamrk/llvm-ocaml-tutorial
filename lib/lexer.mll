@@ -1,24 +1,9 @@
 {
-  open Core
-  open Lexing
   open Ast
-
-  exception SyntaxError of string
-
-  let next_line lexbuf =
-    let pos = lexbuf.lex_curr_p in
-    lexbuf.lex_curr_p <-
-      { pos with pos_bol = lexbuf.lex_curr_pos;
-                 pos_lnum = pos.pos_lnum + 1
-      }
-
-  let echo token =
-    (* printf !"token: %{sexp: token}\n" token; *)
-    token
 }
 
-  let white   = [' ' '\t']+
-  let newline = '\n' | '\n' | "\r\n"
+  let white   = [' ' '\t' '\n' '\r']+
+  let newline = '\n' | '\r' | "\r\n"
   let id      = ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']*
   let digit   = ['0'-'9']
   let frac    = '.' digit*
@@ -26,30 +11,34 @@
 
   rule read =
     parse 
+    (* skip whitespace *)
     | white    { read lexbuf }
-    | newline  { next_line lexbuf; read lexbuf }
-    | "def"    { DEF |> echo }
-    | "extern" { EXTERN |> echo }
-    | "if"     { IF |> echo }
-    | "then"   { THEN |> echo }
-    | "else"   { ELSE |> echo }
-    | "for"    { FOR |> echo }
-    | "in"     { IN |> echo }
-    | "binary" { BINARY |> echo }
-    | "unary"  { UNARY |> echo }
-    | "var"    { VAR |> echo }
-    | id       { IDENT (Lexing.lexeme lexbuf) |> echo }
-    | float    { NUMBER (float_of_string (Lexing.lexeme lexbuf)) |> echo }
-    | "="      { EQUALS |> echo }
-    | "("      { LEFT_PAREN |> echo }
-    | ")"      { RIGHT_PAREN |> echo }
-    | ","      { COMMA |> echo }
-    | ";"      { SEMICOLON |> echo }
-    | _        { KWD (Lexing.lexeme_char lexbuf 0) |> echo }
-    | eof      { EOF |> echo }
+    | newline  { read lexbuf }
+    | "def"    { DEF }
+    | "extern" { EXTERN }
+    | "if"     { IF  }
+    | "then"   { THEN  }
+    | "else"   { ELSE  }
+    | "for"    { FOR  }
+    | "in"     { IN  }
+    | "binary" { BINARY  }
+    | "unary"  { UNARY  }
+    | "var"    { VAR  }
+    | id       { IDENT (Lexing.lexeme lexbuf)  }
+    | float    { NUMBER (float_of_string (Lexing.lexeme lexbuf))  }
+    | "="      { EQUALS  }
+    | "("      { LEFT_PAREN  }
+    | ")"      { RIGHT_PAREN  }
+    | ","      { COMMA  }
+    | ";"      { SEMICOLON  }
+    (* '#' marks the beginning of a comment *)
+    | "#"      { read_comment lexbuf }
+    | _        { KWD (Lexing.lexeme_char lexbuf 0)  }
+    | eof      { EOF  }
 
   and read_comment =
     parse
+    (* comment continues until newline *)
     | newline { read lexbuf }
     | _       { read_comment lexbuf }
     | eof     { EOF }

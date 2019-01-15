@@ -1,27 +1,38 @@
 open Core
 
 type token =
+  (* commands *)
   | DEF
   | EXTERN
+  (* control *)
   | IF
   | THEN
   | ELSE
   | FOR
   | IN
+  (* operators *)
   | BINARY
   | UNARY
+  (* var definition *)
   | VAR
+  (* primary *)
   | IDENT of string
   | NUMBER of float
+  (* unknown *)
   | KWD of char
+  (* special chars *)
   | LEFT_PAREN
   | RIGHT_PAREN
   | EQUALS
   | COMMA
   | SEMICOLON
+  (* end of file *)
   | EOF
 [@@deriving sexp]
 
+(* proto - This type represents the "prototype" for a function, which captures
+ * its name, and its argument names (thus implicitly the number of arguments the
+ * function takes). *)
 type proto =
   | Prototype of string * string list
   | BinOpPrototype of string * string list * int
@@ -29,23 +40,38 @@ type proto =
 
 module Expr = struct
   module No_binop = struct
+    (* base type for expressions before we've properly associated binops *)
     type t =
+      (* variant for numeric literals like "1.0" *)
       | Number of float
+      (* variant for referencing a variable, like "a". *)
       | Variable of string
-      | Bin_list of t * (char * int * t) list
-      | Call of string * t list
-      | If of t * t * t
-      | For of string * t * t * t option * t
+      (* variant for a unary operator. *)
       | Unary of char * t
+      (* variant for a sequence binary operators, they still need to be 
+       * associated based operator precedence. *)
+      | Bin_list of t * (char * int * t) list
+      (* variant for function calls. *)
+      | Call of string * t list
+      (* variant for if/then/else. *)
+      | If of t * t * t
+      (* variant for for/in. *)
+      | For of string * t * t * t option * t
+      (* variant for var/in *)
       | Var of (string * t option) list * t
     [@@deriving sexp]
 
+    (* func - This type represents a function definition itself (still needing
+     * association of binops).  *)
     type func = Function of proto * t [@@deriving sexp]
 
+    (* group the two highest terms joined by the higest precedence operator 
+     * into a single term and then recurse until there is one term. *)
     let rec reduce first rest =
       match rest with
       | (first_op, first_prec, _) :: tail -> (
-          let (_highest_op : char), (_ : int), index =
+          let index =
+            (* search for the index of the operator with highest precedence *)
             List.foldi tail ~init:(first_op, first_prec, 0)
               ~f:(fun new_inx
                  (highest_op, highest_prec, inx)
@@ -54,12 +80,17 @@ module Expr = struct
                 if Int.( > ) new_prec highest_prec then
                   (new_op, new_prec, new_inx + 1)
                 else (highest_op, highest_prec, inx) )
+            |> fun (_, _, index) -> index
           in
           match index with
+          (* if the first operator has precedence, combine [first] and [rest[0]]
+           * into new [first] and set [rest] to [tail rest]. *)
           | 0 ->
               let to_reduce = List.hd_exn rest in
               let expr = Bin_list (first, [to_reduce]) in
               reduce expr (List.tl_exn rest)
+          (* if it's index n > 0 then combine the terms at index [n] and [n-1]
+           * into the new [rest]. *)
           | n ->
               let to_reduce = List.nth_exn rest n in
               let prev_op, prev_prec, prev_expr = List.nth_exn rest (n - 1) in
@@ -69,17 +100,26 @@ module Expr = struct
               reduce first
                 (List.take rest (n - 1) @ (new_expr :: List.drop rest (n + 1)))
           )
+      (* once there's only one term left we're done *)
       | [] -> first
   end
 
   type t =
+    (* variant for numeric literals like "1.0" *)
     | Number of float
+    (* variant for referencing a variable, like "a". *)
     | Variable of string
-    | Binary of char * t * t
-    | Call of string * t list
-    | If of t * t * t
-    | For of string * t * t * t option * t
+    (* variant for a unary operator. *)
     | Unary of char * t
+    (* variant for a binary operators. *)
+    | Binary of char * t * t
+    (* variant for function calls. *)
+    | Call of string * t list
+    (* variant for if/then/else. *)
+    | If of t * t * t
+    (* variant for for/in. *)
+    | For of string * t * t * t option * t
+    (* variant for var/in *)
     | Var of (string * t option) list * t
   [@@deriving sexp]
 
@@ -133,6 +173,7 @@ module Expr = struct
     |}]
 end
 
+(* func - This type represents a function definition itself. *)
 type func = Function of proto * Expr.t [@@deriving sexp]
 
 let func_of_no_binop_func (Expr.No_binop.Function (proto, body)) =
@@ -147,4 +188,6 @@ let set_func_name name (Function (proto, body)) =
   in
   Function (new_proto, body)
 
+(* this holds the precedence for each binary operator that is defined. It can
+ * be mutated if new binops are defined *)
 let binop_precedence : (char, int) Hashtbl.t = Hashtbl.create (module Char)
