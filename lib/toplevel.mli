@@ -1,3 +1,3 @@
 open! Core
 
-val run_main : [`Stdin | `File of string] -> unit
+val main : [`Stdin | `File of string] -> unit
