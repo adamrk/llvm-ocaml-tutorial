@@ -8,14 +8,15 @@ let run_main in_channel ~the_fpm ~the_execution_engine =
   in
   let rec run_loop the_fpm the_execution_engine supplier =
     let incremental = Parser.Incremental.toplevel Lexing.dummy_pos in
-    printf "\nready> " ;
+    printf "\n" ;
+    printf "ready> " ;
     Out_channel.flush stdout ;
     ( try
         match Parser.MenhirInterpreter.loop supplier incremental with
         | `Expr ast ->
+            printf "parsed a toplevel expression" ;
             (* Evaluate a top-level expression into an anonymous function. *)
             let func = Ast.func_of_no_binop_func ast in
-            printf "parsed a toplevel expression" ;
             Out_channel.flush stdout ;
             Llvm_executionengine.add_module Codegen.the_module
               the_execution_engine ;
