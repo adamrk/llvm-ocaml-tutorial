@@ -21,4 +21,4 @@
 
 (env
  (dev
-  (flags (:standard -warn-error -9 -warn-error -3))))
+  (flags (:standard -warn-error -3-9))))
