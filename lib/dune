@@ -13,16 +13,12 @@
  (preprocess (pps ppx_jane ppx_expect ppx_let))
  (inline_tests))
 
-(rule
- (targets lexer.ml)
-  (deps lexer.mll)
-  (action (run %{bin:ocamllex} -q -o %{targets} %{deps})))
+(ocamllex lexer)
 
-(rule 
- (targets parser.mli parser.ml)
-  (deps parser.mly)
-  (action (run menhir --external-tokens Ast --explain --table %{deps})))
+(menhir
+ (flags --external-tokens Ast --explain --table)
+ (modules parser))
 
 (env
  (dev
-  (flags (:standard -warn-error -9))))
+  (flags (:standard -warn-error -9 -warn-error -3))))
