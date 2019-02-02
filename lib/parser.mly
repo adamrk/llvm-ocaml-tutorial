@@ -12,6 +12,7 @@
 %token <float> NUMBER
 %token <char> KWD
 %token EQUALS
+%token ASSIGN
 %token LEFT_PAREN
 %token RIGHT_PAREN
 %token COMMA
@@ -28,7 +29,7 @@
     | Some p -> p
 %}
 
-%start < [`Expr of Ast.Expr.No_binop.func 
+%start < [ `Expr of Ast.Expr.No_binop.func 
          | `Extern of Ast.proto 
          | `Def of Ast.Expr.No_binop.func 
          | `Eof ]> toplevel
@@ -75,7 +76,7 @@ block:
 
   (* var
    *   ::= 'var' identifier ('=' expression)? *)
-var: name = IDENT; e = option(EQUALS; e = expr { e }) { (name, e) }
+var: name = IDENT; e = option(ASSIGN; e = expr { e }) { (name, e) }
 
   (* unary
    *   ::= primary

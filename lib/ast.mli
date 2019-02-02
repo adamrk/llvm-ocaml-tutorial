@@ -1,24 +1,33 @@
 open Core
 
 type token =
+  (* commands *)
   | DEF
   | EXTERN
+  (* control *)
   | IF
   | THEN
   | ELSE
   | FOR
   | IN
+  (* operators *)
   | BINARY
   | UNARY
+  (* var definition *)
   | VAR
+  (* primary *)
   | IDENT of string
   | NUMBER of float
+  (* unknown *)
   | KWD of char
+  (* special chars *)
+  | EQUALS
+  | ASSIGN
   | LEFT_PAREN
   | RIGHT_PAREN
-  | EQUALS
   | COMMA
   | SEMICOLON
+  (* end of file *)
   | EOF
 [@@deriving sexp]
 

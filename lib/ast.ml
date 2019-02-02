@@ -21,9 +21,10 @@ type token =
   (* unknown *)
   | KWD of char
   (* special chars *)
+  | EQUALS
+  | ASSIGN
   | LEFT_PAREN
   | RIGHT_PAREN
-  | EQUALS
   | COMMA
   | SEMICOLON
   (* end of file *)
