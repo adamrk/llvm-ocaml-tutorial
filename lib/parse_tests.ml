@@ -43,20 +43,3 @@ let%expect_test _ =
        (Bin_list (Variable x) ((+ -1 (Number 10))))))) |}];
   print_parsed "5 + #some comment\n5;";
   [%expect {| (Expr (Function (Prototype "" ()) (Bin_list (Number 5) ((+ -1 (Number 5)))))) |}];
-  print_parsed "def test(x) 1+2+x;";
-  [%expect {|
-    (Def
-     (Function (Prototype test (x))
-      (Bin_list (Number 1) ((+ -1 (Number 2)) (+ -1 (Variable x)))))) |}];
-  print_parsed "def test(x) (1+2+x)*(x+(1+2));";
-  [%expect {|
-    (Def
-     (Function (Prototype test (x))
-      (Bin_list (Bin_list (Number 1) ((+ -1 (Number 2)) (+ -1 (Variable x))))
-       ((* -1
-         (Bin_list (Variable x)
-          ((+ -1 (Bin_list (Number 1) ((+ -1 (Number 2)))))))))))) |}];
-  print_parsed "foo(2);";
-  [%expect {| (Expr (Function (Prototype "" ()) (Call foo ((Number 2))))) |}];
-  print_parsed "extern sin(x);";
-  [%expect {| (Extern (Prototype sin (x))) |}];
