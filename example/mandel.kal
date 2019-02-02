@@ -23,9 +23,6 @@ def binary& 6 (LHS RHS)
   else
     !!RHS;
 
-def binary = 9 (LHS RHS)
-  !(LHS < RHS | LHS > RHS);
-
 extern putchard(char);
 
 def printdensity(d)
