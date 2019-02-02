@@ -16,25 +16,25 @@
     | newline  { read lexbuf }
     | "def"    { DEF }
     | "extern" { EXTERN }
-    | "if"     { IF }
-    | "then"   { THEN }
-    | "else"   { ELSE }
-    | "for"    { FOR }
-    | "in"     { IN }
-    | "binary" { BINARY }
-    | "unary"  { UNARY }
-    | "var"    { VAR }
-    | id       { IDENT (Lexing.lexeme lexbuf) }
-    | float    { NUMBER (float_of_string (Lexing.lexeme lexbuf)) }
-    | ":="     { ASSIGN }
-    | "("      { LEFT_PAREN }
-    | ")"      { RIGHT_PAREN }
-    | ","      { COMMA }
-    | ";"      { SEMICOLON }
+    | "if"     { IF  }
+    | "then"   { THEN  }
+    | "else"   { ELSE  }
+    | "for"    { FOR  }
+    | "in"     { IN  }
+    | "binary" { BINARY  }
+    | "unary"  { UNARY  }
+    | "var"    { VAR  }
+    | id       { IDENT (Lexing.lexeme lexbuf)  }
+    | float    { NUMBER (float_of_string (Lexing.lexeme lexbuf))  }
+    | "="      { EQUALS  }
+    | "("      { LEFT_PAREN  }
+    | ")"      { RIGHT_PAREN  }
+    | ","      { COMMA  }
+    | ";"      { SEMICOLON  }
     (* '#' marks the beginning of a comment *)
     | "#"      { read_comment lexbuf }
-    | _        { KWD (Lexing.lexeme_char lexbuf 0) }
-    | eof      { EOF }
+    | _        { KWD (Lexing.lexeme_char lexbuf 0)  }
+    | eof      { EOF  }
 
   and read_comment =
     parse
