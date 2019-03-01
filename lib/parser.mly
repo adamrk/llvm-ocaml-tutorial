@@ -19,11 +19,10 @@
 %token EOF
 
 %{ 
-  open Core
   open Ast
   (* get the precedence of the binary operator token. *)
   let precedence c = 
-    match Hashtbl.find binop_precedence c with 
+    match Base.Hashtbl.find binop_precedence c with 
     | None -> -1
     | Some p -> p
 %}
@@ -116,7 +115,8 @@ prototype:
     { Prototype (name, args) }
   | kind = operator_kind; op = operator; prec = precedence; 
     args = delimited(LEFT_PAREN, list(IDENT), RIGHT_PAREN) 
-    { match kind with
+    { let open Base in
+      match kind with
       | `Binary -> 
           if Int.(<>) (List.length args) 2 
           then raise_s 
@@ -143,7 +143,7 @@ operator_kind:
   ;
 
 precedence:
-  | n = option(NUMBER) { Int.of_float (Option.value n ~default:30.0) }
+  | n = option(NUMBER) { Base.Int.of_float (Base.Option.value n ~default:30.0) }
   ;
 
   (* definition
