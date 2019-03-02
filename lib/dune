@@ -18,7 +18,3 @@
 (menhir
  (flags --external-tokens Ast --explain --table)
  (modules parser))
-
-(env
- (dev
-  (flags (:standard -warn-error -3-9))))
