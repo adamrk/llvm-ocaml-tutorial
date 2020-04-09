@@ -10,7 +10,7 @@
    llvm.target
    llvm.scalar_opts
    menhirLib)
- (preprocess (pps ppx_jane ppx_expect ppx_let))
+ (preprocess (pps ppx_jane -allow-unannotated-ignores ppx_expect ppx_let))
  (inline_tests))
 
 (ocamllex lexer)
